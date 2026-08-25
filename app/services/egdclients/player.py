@@ -63,3 +63,48 @@ class PlayerClient(CoreClient):
         response = await self._graphql_query(payload)
         logger.info(f"Player with pin {pin} successfully retrieved.")
         return GraphQLPlayerResponse.model_validate(response.json()).data.player
+
+    async def get_player_placements(self, pin: int) -> Player:
+        query = """
+        query GetPlayer($pin: Int!) {
+            player(pin: $pin) {
+                pin
+                lastName
+                firstName
+                countryCode
+                club
+                grade
+                rating
+                totalTournaments
+                lastAppearance
+                placements {
+                    data {
+                        id
+                        pinPlayer
+                        tournamentCode
+                        lastName
+                        firstName
+                        countryCode
+                        club
+                        placement
+                        gradeDeclared
+                        wonGames
+                        lostGames
+                        jigoGames
+                        precedentRating
+                        followingRating
+                    }
+                    total
+                }
+            }
+        }
+        """
+        payload = {
+            "query": query,
+            "variables": {
+                "pin": pin
+            }
+        }
+        response = await self._graphql_query(payload)
+        logger.info(f"Placements of player with pin {pin} successfully retrieved.")
+        return GraphQLPlayerResponse.model_validate(response.json()).data.player
