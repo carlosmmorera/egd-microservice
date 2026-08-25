@@ -19,6 +19,12 @@ class Game(BaseModel):
     result: str
     sgfCode: Optional[str] = None
 
+class GraphQLGameData(BaseModel):
+    game: Game
+
+class GraphQLGameResponse(BaseModel):
+    data: GraphQLGameData
+
 class GameList(BaseModel):
     data: List[Game]
     total: int

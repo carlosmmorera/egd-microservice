@@ -4,7 +4,7 @@ from loguru import logger
 from typing import Optional, List
 from tenacity import retry, stop_after_attempt, wait_exponential
 from app.core.exceptions import InternalServerErrorException, UnauthorizedException
-from app.services.model import Game, GameList, GraphQLGamesResponse
+from app.services.model import Game, GameList, GraphQLGamesResponse, GraphQLGameResponse
 from app.services.model import BasicPlayer, Player, GraphQLPlayerResponse
 from app.config import get_settings
 
@@ -127,7 +127,7 @@ class EGDClient:
 
             if "errors" in response_data:
                 logger.error(f"GraphQL returned errors for player with pin {pin}: {response_data['errors']}")
-                raise InternalServerErrorException(f"GraphQL error retrieving player with {pin}")
+                raise InternalServerErrorException(f"GraphQL error retrieving player with pin {pin}")
             response.raise_for_status()
 
             logger.info(f"Player with Pin {pin} successfully retrieved.")
@@ -141,6 +141,62 @@ class EGDClient:
         except Exception as e:
             logger.error(f"Error retrieving player with pin {pin}: {e}")
             raise InternalServerErrorException(f"Error retrieving player with pin {pin}")
+
+    @with_retries
+    async def get_game_by_id(self, id: int) -> Game:
+        if not self.__is_authenticated():
+            logger.error("Authentication token is missing for getting player games")
+            raise UnauthorizedException("Unauthorized operation")
+        query = """
+        query GetGame($id: Int!) { 
+            game(id: $id) {
+                id
+                tournamentCode
+                date
+                round
+                pinPlayer1
+                color1
+                pinPlayer2
+                color2
+                handicap
+                result
+                sgfCode
+            }
+        }
+        """
+        payload = {
+            "query": query,
+            "variables": {
+                "id": id
+            }
+        }
+
+        try:
+            response = await self.client.post(self.__get_graphql_url(), json=payload)
+            try:
+                response_data = response.json()
+            except ValueError:
+                logger.error(f"Non-JSON response for game id {id}. Raw response: {response.text}")
+                response.raise_for_status()
+                
+                raise InternalServerErrorException(f"Invalid non-JSON response from server for game id {id}")
+
+            if "errors" in response_data:
+                logger.error(f"GraphQL returned errors for game with id {id}: {response_data['errors']}")
+                raise InternalServerErrorException(f"GraphQL error retrieving game with id {id}")
+            response.raise_for_status()
+
+            logger.info(f"Game with id {id} successfully retrieved.")
+            return GraphQLGameResponse.model_validate(response_data).data.game
+
+        except InternalServerErrorException:
+            raise
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP Error retrieving game with id {id}: {e.response.text}")
+            raise InternalServerErrorException(f"Error retrieving game with id {id}")
+        except Exception as e:
+            logger.error(f"Error retrieving game with id {id}: {e}")
+            raise InternalServerErrorException(f"Error retrieving game with id {id}")
 
     @with_retries
     async def __get_player_games_page(self, pin: int, page: int = 1, limit: int = 50) -> GameList:

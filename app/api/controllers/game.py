@@ -12,3 +12,8 @@ class GameController:
             "games": game_list,
             "total": len(game_list)
         }
+
+    @staticmethod
+    async def get_game_by_id(id: int) -> Game:
+        egd_client = await get_egd_client()
+        return await egd_client.get_game_by_id(id)
