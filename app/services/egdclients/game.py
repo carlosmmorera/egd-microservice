@@ -42,10 +42,13 @@ class GameClient(CoreClient):
             raise InternalServerErrorException(f"Validation error retrieving game with id {id}")
 
     async def __get_player_games_page(self, pin: int, page: int = 1, limit: int = 50) -> GameList:
-        query = """
-        query GetPlayerGames($filter: GameFilterInput, $order: GameOrderInput, $pagination: PaginationInput!) { 
-            games(filter: $filter, order: $order, pagination: $pagination) {
-                data {
+        query = f"""
+        query GetPlayerGames {{ 
+            games(
+                filter: {{ pinPlayer: {pin} }}, 
+                pagination: {{ page: {page}, limit: {limit} }}
+            ) {{
+                data {{
                     id
                     tournamentCode
                     date
@@ -57,29 +60,16 @@ class GameClient(CoreClient):
                     handicap
                     result
                     sgfCode
-                }
+                }}
                 total
                 hasMorePages
-            }
-        }
+            }}
+        }}
         """
 
         payload = {
             "query": query,
-            "operationName": "GetPlayerGames",
-            "variables": {
-                "filter": {
-                    "pinPlayer": pin
-                },
-                "order": {
-                    "field": "date",
-                    "direction": "DESC"
-                },
-                "pagination": {
-                    "page": page,
-                    "limit": limit
-                }
-            }
+            "operationName": "GetPlayerGames"
         }
         response = await self._graphql_query(payload)
         logger.info(f"Games page {page} for Pin {pin} successfully retrieved.")
