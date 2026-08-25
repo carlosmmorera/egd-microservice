@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class BasicPlayer(BaseModel):
     retcode: str
-    Pin_Player: str
+    Pin_Player: int
     AGAID: str
     Last_Name: str
     Name: str

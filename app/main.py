@@ -33,9 +33,10 @@ async def lifespan(app: FastAPI):
     yield
     
     logger.info("Shutting down EGD Microservice...")
+    egd_client = await get_egd_client()
     try:
         await asyncio.gather(
-            get_egd_client.close(),
+            egd_client.close(),
             return_exceptions=True
         )
         logger.info("All HTTP client connections closed successfully.")

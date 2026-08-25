@@ -3,8 +3,8 @@ import asyncio
 from loguru import logger
 from typing import Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
-from app.core.exceptions import InternalServerErrorException
-from app.services.model import BasicPlayer
+from app.core.exceptions import InternalServerErrorException, UnauthorizedException
+from app.services.model import BasicPlayer, Player, GraphQLPlayerResponse
 from app.config import get_settings
 
 def should_retry(retry_state):
@@ -56,8 +56,11 @@ class EGDClient:
     def __is_authenticated(self) -> bool:
         return self.token is not None
 
+    def __get_graphql_url(self) -> str:
+        return f"{self.base_url}/{self.version}/graphql"
+
     @with_retries
-    async def get_basic_player_info(self, pin: str) -> BasicPlayer:
+    async def get_basic_player_info(self, pin: int) -> BasicPlayer:
         try:
             response = await self.client.get(f"{self.url_basic_player}?pin={pin}")
             response.raise_for_status()
@@ -67,6 +70,58 @@ class EGDClient:
         except Exception as e:
             logger.error(f"Error retrieving basic player with pin {pin}: {e}")
             raise InternalServerErrorException(f"Error retrieving basic player with pin {pin}")
+
+    @with_retries
+    async def get_player_information(self, pin: int) -> Player:
+        if not self.__is_authenticated():
+            logger.error("Authentication token is missing for getting player information")
+            raise UnauthorizedException("Unauthorized operation")
+
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
+
+        query = """
+        query GetPlayer($pin: Int!) { 
+            player(pin: $pin) {
+                pin
+                agaId
+                lastName
+                firstName
+                countryCode
+                club
+                grade
+                egfPlacement
+                rating
+                deltaRating
+                proposedGrade
+                totalTournaments
+                lastAppearance
+            }
+        }
+        """
+        payload = {
+            "query": query,
+            "variables": {
+                "pin": pin
+            }
+        }
+
+        try:
+            response = await self.client.post(self.__get_graphql_url(), headers=headers, json=payload)
+            response.raise_for_status()
+            response_data = response.json()
+
+            if "errors" in response_data:
+                logger.error(f"GraphQL returned errors for player with pin {pin}: {response_data['errors']}")
+                raise InternalServerErrorException(f"GraphQL error retrieving player with {pin}")
+
+            logger.info(f"Player with Pin {pin} successfully retrieved.")
+            return GraphQLPlayerResponse.model_validate(response_data).data.player
+        except Exception as e:
+            logger.error(f"Error retrieving player with pin {pin}: {e}")
+            raise InternalServerErrorException(f"Error retrieving player with pin {pin}")
         
 async def get_egd_client() -> EGDClient:
     return await EGDClient.get_instance()
