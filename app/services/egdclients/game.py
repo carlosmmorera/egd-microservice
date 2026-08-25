@@ -2,7 +2,7 @@ from loguru import logger
 from typing import List
 from app.services.egdclients import CoreClient
 from app.services.model import Game, GameList, GraphQLGamesResponse, GraphQLGameResponse
-from app.core.exceptions import InternalServerErrorException
+from app.core.exceptions import InternalServerErrorException, NotFoundException
 from pydantic import ValidationError
 
 class GameClient(CoreClient):
@@ -33,6 +33,9 @@ class GameClient(CoreClient):
         response = await self._graphql_query(payload)
         logger.info(f"Game with id {id} successfully retrieved.")
         try:
+            response_data = response.json()
+            if "data" not in response_data or "game" not in response_data["data"] or response_data["data"]["game"] is None:
+                raise NotFoundException(f"Game with id {id} not found")
             return GraphQLGameResponse.model_validate(response.json()).data.game
         except ValidationError as e:
             logger.error(f"Validation error retrieving game with id {id}\nObtained {response.json()}\nError information: {e}")

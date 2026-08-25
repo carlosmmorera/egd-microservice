@@ -1,6 +1,6 @@
 import httpx
 import asyncio
-from app.services.egdclients import PlayerClient, GameClient
+from app.services.egdclients import PlayerClient, GameClient, TournamentClient
 
 class EGDClient:
     _instancia = None
@@ -11,6 +11,7 @@ class EGDClient:
         self._cache_lock = asyncio.Lock()
         self.player: PlayerClient = PlayerClient(self.__client)
         self.game: GameClient = GameClient(self.__client)
+        self.tournament: TournamentClient = TournamentClient(self.__client)
 
     @classmethod
     async def get_instance(cls):
