@@ -1,0 +1,1 @@
+from .gamesresponse import GameListResponse

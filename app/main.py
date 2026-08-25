@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from loguru import logger
 from app.config import get_settings
 from app.services import get_egd_client
-from app.api.routers import player
+from app.api.routers import player, game
 
 def setup_logging():
     logger.remove()
@@ -52,6 +52,7 @@ app = FastAPI(
 )
 
 app.include_router(player.router, prefix="/player", tags=["player"])
+app.include_router(game.router, prefix="/game", tags=["game"])
 
 #uv run uvicorn app.main:app --reload
 #http://localhost:8000/docs

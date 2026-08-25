@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 from typing import Optional
 
+class Biography(BaseModel):
+    type: str
+    biography: Optional[str] = None
+    photo: Optional[str] = None
+
 class Player(BaseModel):
     pin: int
     agaId: int
@@ -15,6 +20,7 @@ class Player(BaseModel):
     proposedGrade: str
     totalTournaments: Optional[int] = None
     lastAppearance: Optional[str] = None
+    # biography: Optional[Biography] = None
 
 class GraphQLPlayerData(BaseModel):
     player: Player
