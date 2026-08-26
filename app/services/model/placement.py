@@ -14,8 +14,8 @@ class Placement(BaseModel):
     wonGames: int
     lostGames: int
     jigoGames: int
-    precedentRating: Optional[float] = None
-    followingRating: Optional[float] = None
+    precedentRating: float
+    followingRating: float
 
 class PlacementList(BaseModel):
     data: List[Placement] = []

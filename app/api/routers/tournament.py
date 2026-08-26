@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Query
 from datetime import date
-from app.services.model import EGDTournament
 from app.api.controllers import TournamentController
-from app.api.schema import TournamentListResponse
+from app.api.schema import TournamentListResponse, ExtendedTournamentResponse
 
 router = APIRouter()
 
@@ -14,5 +13,5 @@ async def get_tournaments(
     return await TournamentController.get_by_country_and_date(country_code, start_date)
 
 @router.get("/{code}")
-async def get_tournament_by_code(code: str) -> EGDTournament:
+async def get_tournament_by_code(code: str) -> ExtendedTournamentResponse:
     return await TournamentController.get_by_code(code)
