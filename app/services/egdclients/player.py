@@ -34,26 +34,65 @@ class PlayerClient(CoreClient):
             logger.error(f"Error retrieving basic player with pin {pin}: {e}")
             raise InternalServerErrorException(f"Error retrieving basic player with pin {pin}")
 
-    async def get_player_information(self, pin: int) -> Player:
+    async def get_player_information(self, pin: int, include_placements: bool = True) -> Player:
         query = """
-        query GetPlayer($pin: Int!) { 
-            player(pin: $pin) {
-                pin
-                agaId
-                lastName
-                firstName
-                countryCode
-                club
-                grade
-                egfPlacement
-                rating
-                deltaRating
-                proposedGrade
-                totalTournaments
-                lastAppearance
+            query GetPlayer($pin: Int!) { 
+                player(pin: $pin) {
+                    pin
+                    agaId
+                    lastName
+                    firstName
+                    countryCode
+                    club
+                    grade
+                    egfPlacement
+                    rating
+                    deltaRating
+                    proposedGrade
+                    totalTournaments
+                    lastAppearance
+                }
             }
-        }
         """
+        if include_placements:
+            query = """
+                query GetPlayer($pin: Int!) { 
+                    player(pin: $pin) {
+                        pin
+                        agaId
+                        lastName
+                        firstName
+                        countryCode
+                        club
+                        grade
+                        egfPlacement
+                        rating
+                        deltaRating
+                        proposedGrade
+                        totalTournaments
+                        lastAppearance
+                        placements {
+                            data {
+                                id
+                                pinPlayer
+                                tournamentCode
+                                lastName
+                                firstName
+                                countryCode
+                                club
+                                placement
+                                gradeDeclared
+                                wonGames
+                                lostGames
+                                jigoGames
+                                precedentRating
+                                followingRating
+                            }
+                            total
+                        }
+                    }
+                }
+            """
         payload = {
             "query": query,
             "variables": {
@@ -62,49 +101,4 @@ class PlayerClient(CoreClient):
         }
         response = await self._graphql_query(payload)
         logger.info(f"Player with pin {pin} successfully retrieved.")
-        return GraphQLPlayerResponse.model_validate(response.json()).data.player
-
-    async def get_player_placements(self, pin: int) -> Player:
-        query = """
-        query GetPlayer($pin: Int!) {
-            player(pin: $pin) {
-                pin
-                lastName
-                firstName
-                countryCode
-                club
-                grade
-                rating
-                totalTournaments
-                lastAppearance
-                placements {
-                    data {
-                        id
-                        pinPlayer
-                        tournamentCode
-                        lastName
-                        firstName
-                        countryCode
-                        club
-                        placement
-                        gradeDeclared
-                        wonGames
-                        lostGames
-                        jigoGames
-                        precedentRating
-                        followingRating
-                    }
-                    total
-                }
-            }
-        }
-        """
-        payload = {
-            "query": query,
-            "variables": {
-                "pin": pin
-            }
-        }
-        response = await self._graphql_query(payload)
-        logger.info(f"Placements of player with pin {pin} successfully retrieved.")
         return GraphQLPlayerResponse.model_validate(response.json()).data.player

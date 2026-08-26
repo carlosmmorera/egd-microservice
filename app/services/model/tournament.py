@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from enum import Enum
+from app.services.model import PlacementList
 
 class TournamentClassEnum(str, Enum):
     A = "A"
@@ -14,7 +15,7 @@ class TournamentStatusEnum(str, Enum):
     AwaitingValidation = "AwaitingValidation"
     Validated = "Validated"
 
-class Tournament(BaseModel):
+class EGDTournament(BaseModel):
     code: str
     reliability: Optional[int] = None
     description: Optional[str] = None
@@ -25,10 +26,22 @@ class Tournament(BaseModel):
     tournamentClass: TournamentClassEnum
     rounds: int
     totalPlayers: Optional[int] = None
-    status: TournamentStatusEnum
+    status: Optional[TournamentStatusEnum] = None
+    placements: Optional[PlacementList] = None
+
+class TournamentList(BaseModel):
+    data: List[EGDTournament]
+    total: int
+    hasMorePages: bool
 
 class GraphQLTournamentData(BaseModel):
-    tournament: Tournament
+    tournament: EGDTournament
 
 class GraphQLTournamentResponse(BaseModel):
     data: GraphQLTournamentData
+
+class GraphQLTournamentsData(BaseModel):
+    tournaments: TournamentList
+
+class GraphQLTournamentsResponse(BaseModel):
+    data: GraphQLTournamentsData
