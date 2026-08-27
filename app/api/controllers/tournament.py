@@ -4,6 +4,8 @@ from app.services import get_egd_client
 from app.api.schema import TournamentListResponse, BasicTournamentResponse, ExtendedPlacement, ExtendedTournamentResponse
 from app.services.model import EGDTournament, Placement, Player
 from app.api.controllers import PlayerController
+from datetime import datetime
+from loguru import logger
 
 class TournamentController:
     @staticmethod
@@ -39,9 +41,6 @@ class TournamentController:
 
     @staticmethod
     async def get_by_country_and_date(country_code: str, start_date: date) -> TournamentListResponse:
-        """
-        Obtiene una lista de torneos a partir de un país y una fecha determinada.
-        """
         egd_client = await get_egd_client()
         tournamentList: List[BasicTournamentResponse] = [
             BasicTournamentResponse.from_tournament(t) for t in await egd_client.tournament.get_tournaments_from(
@@ -49,6 +48,39 @@ class TournamentController:
                 dateFrom=start_date.strftime("%Y-%m-%d 00:00:00")
             )
         ]
+        return {
+            "tournaments": tournamentList,
+            "total": len(tournamentList)
+        }
+
+    @staticmethod
+    async def get_by_player_and_date(pin: int, start_date: date) -> TournamentListResponse:
+        player_info: Player = await PlayerController.get_information(pin)
+
+        if player_info.placements is None or len(player_info.placements.data) < 1:
+            return {
+                "tournaments": [],
+                "total": 0
+            }
+
+        tournamentList: List[BasicTournamentResponse] = []
+        egd_client = await get_egd_client()
+
+        for placement in player_info.placements.data:
+            t_code = placement.tournamentCode
+
+            # Tournament Code format: <letter> + <date in format YYMMDD> + <letter>
+            if len(t_code) == 8:
+                date_str = t_code[1:7]
+                try:
+                    tournament_date = datetime.strptime(date_str, "%y%m%d").date()
+                    if tournament_date > start_date:
+                        tournamet: EGDTournament = await egd_client.tournament.get_tournament_by_code(t_code)
+                        tournamentList.append(BasicTournamentResponse.from_tournament(tournamet))
+                        
+                except ValueError:
+                    logger.error(f"Error processing tournament code {t_code}")
+
         return {
             "tournaments": tournamentList,
             "total": len(tournamentList)
