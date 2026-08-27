@@ -1,5 +1,5 @@
 from loguru import logger
-from typing import List
+from typing import List, Optional
 from app.services.egdclients import CoreClient
 from app.services.model import Game, GameList, GraphQLGamesResponse, GraphQLGameResponse
 from app.core.exceptions import InternalServerErrorException, NotFoundException
@@ -41,11 +41,26 @@ class GameClient(CoreClient):
             logger.error(f"Validation error retrieving game with id {id}\nObtained {response.json()}\nError information: {e}")
             raise InternalServerErrorException(f"Validation error retrieving game with id {id}")
 
-    async def __get_player_games_page(self, pin: int, dateFrom: str, page: int = 1, limit: int = 50) -> GameList:
+    async def __get_player_games_page(
+        self, 
+        pin: int, 
+        dateFrom: Optional[str] = None, 
+        tournamentCode: Optional[str] = None, 
+        page: int = 1, 
+        limit: int = 50
+    ) -> GameList:
+        filters = [f"pinPlayer: {pin}"]
+        
+        if dateFrom:
+            filters.append(f'dateFrom: "{dateFrom}"')
+        if tournamentCode:
+            filters.append(f'tournamentCode: "{tournamentCode}"')
+        filter_str = ", ".join(filters)
+        
         query = f"""
         query GetPlayerGames {{ 
             games(
-                filter: {{ pinPlayer: {pin}, dateFrom: \"{dateFrom}\" }}, 
+                filter: {{ {filter_str} }}, 
                 pagination: {{ page: {page}, limit: {limit} }}
             ) {{
                 data {{
@@ -75,12 +90,19 @@ class GameClient(CoreClient):
         logger.info(f"Games page {page} for Pin {pin} successfully retrieved.")
         return GraphQLGamesResponse.model_validate(response.json()).data.games
 
-    async def get_all_player_games(self, pin: int, dateFrom: str) -> List[Game]:
+    async def get_player_games(
+        self, 
+        pin: int, 
+        dateFrom: Optional[str] = None, 
+        tournamentCode: Optional[str] = None
+    ) -> List[Game]:
         all_games: List[Game] = []
         current_page = 1
         
         logger.info(f"Starting to fetch all games for pin {pin}")
-        games_page = await self.__get_player_games_page(pin=pin, dateFrom=dateFrom, page=current_page)
+        games_page = await self.__get_player_games_page(
+            pin=pin, dateFrom=dateFrom, tournamentCode=tournamentCode, page=current_page
+        )
         all_games.extend(games_page.data)
         
         while games_page.hasMorePages:
