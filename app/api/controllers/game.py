@@ -2,12 +2,13 @@ from app.services import get_egd_client
 from app.api.schema import GameListResponse
 from app.services.model import Game
 from typing import List
+from datetime import date
 
 class GameController:
     @staticmethod
-    async def get_games_from_player(pin: int) -> GameListResponse:
+    async def get_games_from_player(pin: int, start_date: date) -> GameListResponse:
         egd_client = await get_egd_client()
-        game_list: List[Game] = await egd_client.game.get_all_player_games(pin)
+        game_list: List[Game] = await egd_client.game.get_all_player_games(pin, start_date.strftime("%Y-%m-%d 00:00:00"))
         return {
             "games": game_list,
             "total": len(game_list)
