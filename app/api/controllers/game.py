@@ -3,8 +3,7 @@ from datetime import date
 from collections import defaultdict
 from app.services import get_egd_client
 from app.api.schema import GameListResponse, ExtendedGame, ExtendedTournamentResponse
-from app.services.model import Game
-from app.api.controllers import TournamentController
+from app.services.model import Game, EGDTournament
 
 class GameController:
     @staticmethod
@@ -33,10 +32,11 @@ class GameController:
         extended_game_list: List[ExtendedGame] = []
 
         for t_code, games in tournament_games.items():
-            tournament: ExtendedTournamentResponse = await TournamentController.get_by_code(t_code)
+            egd_client = await get_egd_client()
+            tournament: EGDTournament = await egd_client.tournament.get_tournament_by_code(t_code)
             if tournament.placements is not None:
                 placement_by_pin = {
-                    placement.pinPlayer: placement for placement in tournament.placements 
+                    placement.pinPlayer: placement for placement in tournament.placements.data 
                     if placement.pinPlayer in tournament_players[t_code]
                 }
 

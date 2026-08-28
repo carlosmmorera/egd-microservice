@@ -1,8 +1,7 @@
 from typing import Sequence, Union, Optional, Self
 from typing_extensions import TypedDict
 from pydantic import BaseModel
-from app.services.model import Game
-from app.api.schema import ExtendedPlacement
+from app.services.model import Game, Placement
 
 class PlayerInfo(BaseModel):
     lastName: Optional[str] = None
@@ -13,7 +12,7 @@ class PlayerInfo(BaseModel):
     precedentRating: float
 
     @classmethod
-    def from_extended_placement(cls, placement: ExtendedPlacement) -> "PlayerInfo":
+    def from_extended_placement(cls, placement: Placement) -> "PlayerInfo":
         return cls(
             lastName=placement.lastName,
             firstName=placement.firstName,
@@ -28,11 +27,11 @@ class ExtendedGame(Game):
     player1: Optional[PlayerInfo] = None
     player2: Optional[PlayerInfo] = None
 
-    def add_player1(self, placement: ExtendedPlacement) -> Self:
+    def add_player1(self, placement: Placement) -> Self:
         self.player1 = PlayerInfo.from_extended_placement(placement)
         return self
 
-    def add_player2(self, placement: ExtendedPlacement) -> Self:
+    def add_player2(self, placement: Placement) -> Self:
         self.player2 = PlayerInfo.from_extended_placement(placement)
         return self
 
