@@ -14,7 +14,7 @@ class BasicTournamentResponse(BaseModel):
     totalPlayers: Optional[int] = None
 
     @classmethod
-    def from_tournament(cls, tournament: EGDTournament):
+    def from_tournament(cls, tournament: EGDTournament) -> "BasicTournamentResponse":
         return cls(
             code=tournament.code,
             description=tournament.description,
@@ -53,7 +53,13 @@ class ExtendedPlacement(BaseModel):
     resetDeltaRating: float
 
     @classmethod
-    def from_placement(cls, placement: Placement, reset: bool, first_tournament: bool, prevResetRating: Optional[float] = None):
+    def from_placement(
+        cls,
+        placement: Placement,
+        reset: bool,
+        first_tournament: bool,
+        prevResetRating: Optional[float] = None
+    ) -> "ExtendedPlacement":
         delta_rating: float = placement.followingRating - placement.precedentRating
         if prevResetRating is not None:
             delta_rating += (placement.precedentRating - prevResetRating)
@@ -102,7 +108,7 @@ class ExtendedTournamentResponse(BaseModel):
     placements: Optional[List[ExtendedPlacement]] = None
 
     @classmethod
-    def from_tournament(cls, tournament: EGDTournament, placements: List[ExtendedPlacement]):
+    def from_tournament(cls, tournament: EGDTournament, placements: List[ExtendedPlacement]) -> "ExtendedTournamentResponse":
         new_players: int = 0
         reset_players: int = 0
         for extended_plc in placements:

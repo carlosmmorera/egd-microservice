@@ -1,2 +1,2 @@
-from .gamesresponse import GameListResponse
 from .tournamentsresponse import TournamentListResponse, BasicTournamentResponse, ExtendedPlacement, ExtendedTournamentResponse
+from .gamesresponse import GameListResponse, ExtendedGame
