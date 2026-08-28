@@ -41,6 +41,7 @@ class GameController:
                 }
 
                 for ext_game in games:
+                    ext_game.tournamentName = tournament.description
                     if ext_game.pinPlayer1 in placement_by_pin:
                         ext_game.add_player1(placement_by_pin[ext_game.pinPlayer1])
                     if ext_game.pinPlayer2 in placement_by_pin:

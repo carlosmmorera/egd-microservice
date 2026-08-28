@@ -24,6 +24,7 @@ class PlayerInfo(BaseModel):
         )
 
 class ExtendedGame(Game):
+    tournamentName: Optional[str] = None
     player1: Optional[PlayerInfo] = None
     player2: Optional[PlayerInfo] = None
 
